@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تسجيل حضور التدريب</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f9f9f9;
+      margin-top: 50px;
+      direction: rtl;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      width: 80%;
+      font-size: 16px;
+    }
+    #checkinForm, #startBtn { display: none; }
+  </style>
+</head>
+<body>
+  <h2>نموذج تسجيل الحضور</h2>
+
+  <!-- Login Section -->
+  <div id="loginSection">
+    <input type="text" id="loginNID" placeholder="الرقم القومي"><br>
+    <button id="loginBtn">دخول</button>
+  </div>
+
+  <button id="startBtn">ابدأ التحقق من الموقع</button>
+  <p id="status">يرجى تسجيل الدخول باستخدام الرقم القومي</p>
+
+  <form id="checkinForm">
+    <input type="text" name="name" placeholder="الاسم" required><br>
+    <input type="text" name="nid" placeholder="الرقم القومي" required><br>
+    <input type="text" name="niaba" placeholder="النيابة" required><br>
+    <input type="hidden" name="lat" id="lat">
+    <input type="hidden" name="lon" id="lon">
+    <button type="submit">تسجيل الحضور</button>
+  </form>
+
+  <script>
+    // ✅ Allowed national IDs
+    const allowedNIDs = [
+      "1234",
+      "98765432109876",
+      "11223344556677"
+    ];
+
+    // Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const loginSection = document.getElementById("loginSection");
+    const startBtn = document.getElementById("startBtn");
+    const statusEl = document.getElementById("status");
+    const formEl = document.getElementById("checkinForm");
+
+    // ✅ تم استبداله بالرابط الجديد
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxDoIW7X1OLv9qWqoRU_Hy08YssJf71P2gILzmwWA47bunTVAyXjvUo2wFDNGr-yQsWZQ/exec";
+
+    // ✅ Handle login
+    loginBtn.addEventListener("click", () => {
+      const enteredNID = document.getElementById("loginNID").value.trim();
+      if (allowedNIDs.includes(enteredNID)) {
+        statusEl.textContent = "✅ تم التحقق من الرقم القومي. يمكنك المتابعة.";
+        loginSection.style.display = "none";
+        startBtn.style.display = "inline-block";
+      } else {
+        statusEl.textContent = "❌ الرقم القومي غير مسموح له بالدخول.";
+      }
+    });
+
+    // ✅ Geolocation setup
+    const allowedLat = 30.0656648;
+    const allowedLon = 31.2081144;
+    const maxDist = 500;
+
+    function toRad(x) { return x * Math.PI / 180; }
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    startBtn.addEventListener("click", () => {
+      statusEl.textContent = "📍 جاري تحديد الموقع...";
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const dist = getDistance(lat, lon, allowedLat, allowedLon);
+
+        if (dist <= maxDist) {
+          statusEl.textContent = "✅ يمكنك الآن تسجيل الحضور.";
+          formEl.style.display = "block";
+          startBtn.style.display = "none";
+          document.getElementById("lat").value = lat;
+          document.getElementById("lon").value = lon;
+        } else {
+          statusEl.textContent = `❌ خارج النطاق (${Math.round(dist)} متر). لا يمكنك التسجيل.`;
+        }
+      }, () => {
+        statusEl.textContent = "❌ لم يتم تحديد الموقع. يرجى السماح بالوصول.";
+      });
+    });
+
+    formEl.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(formEl);
+      fetch(scriptUrl, {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        statusEl.textContent = data.result;
+        formEl.style.display = "none";
+      })
+      .catch(() => {
+        statusEl.textContent = "❌ حدث خطأ أثناء إرسال البيانات.";
+      });
+    });
+  </script>
+</body>
+</html>
