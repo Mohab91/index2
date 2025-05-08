@@ -38,28 +38,28 @@
     <input type="text" name="niaba" placeholder="النيابة" required><br>
     <input type="hidden" name="lat" id="lat">
     <input type="hidden" name="lon" id="lon">
+    <input type="hidden" name="ip" id="ip">
     <button type="submit">تسجيل الحضور</button>
   </form>
 
   <script>
-    // ✅ Allowed national IDs
-    const allowedNIDs = [
-      "1234",
-      "98765432109876",
-      "11223344556677"
-    ];
+    const allowedNIDs = ["1234", "98765432109876", "11223344556677"];
 
-    // Elements
     const loginBtn = document.getElementById("loginBtn");
     const loginSection = document.getElementById("loginSection");
     const startBtn = document.getElementById("startBtn");
     const statusEl = document.getElementById("status");
     const formEl = document.getElementById("checkinForm");
 
-    // ✅ تم استبداله بالرابط الجديد
     const scriptUrl = "https://script.google.com/macros/s/AKfycbxDoIW7X1OLv9qWqoRU_Hy08YssJf71P2gILzmwWA47bunTVAyXjvUo2wFDNGr-yQsWZQ/exec";
 
-    // ✅ Handle login
+    // احصل على الـ IP من api.ipify.org
+    fetch("https://api.ipify.org?format=json")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("ip").value = data.ip;
+      });
+
     loginBtn.addEventListener("click", () => {
       const enteredNID = document.getElementById("loginNID").value.trim();
       if (allowedNIDs.includes(enteredNID)) {
@@ -71,7 +71,6 @@
       }
     });
 
-    // ✅ Geolocation setup
     const allowedLat = 30.0656648;
     const allowedLon = 31.2081144;
     const maxDist = 500;
